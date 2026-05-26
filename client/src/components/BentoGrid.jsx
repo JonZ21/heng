@@ -1,13 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useWebSocket } from '../hooks/useWebSocket.js';
 import { dayProgress, weekProgress } from '../utils/time.js';
+import { useRatings } from '../hooks/useRatings.js';
 import ClockCard from './ClockCard.jsx';
 import ProgressPie from './ProgressPie.jsx';
 import LinearWidget from './LinearWidget.jsx';
 import GoalsWidget from './GoalsWidget.jsx';
+import RatingsChart from './RatingsChart.jsx';
+import StreakCard from './StreakCard.jsx';
 
 export default function BentoGrid({ linearData, setLinearData }) {
   const [now, setNow] = useState(new Date());
+  const { ratings } = useRatings(6);
 
   useEffect(() => {
     const interval = setInterval(() => setNow(new Date()), 60_000);
@@ -53,15 +57,8 @@ export default function BentoGrid({ linearData, setLinearData }) {
 
       <GoalsWidget />
 
-      {/* Row 2, col 4: Streak placeholder */}
-      <div className="card" style={{ gridColumn: 4, gridRow: 2 }}>
-        <div className="card-label">Streak</div>
-      </div>
-
-      {/* Row 3, col 1-3: Ratings chart placeholder */}
-      <div className="card" style={{ gridColumn: '1 / 4', gridRow: 3 }}>
-        <div className="card-label">◈ Weekly Ratings</div>
-      </div>
+      <StreakCard />
+      <RatingsChart ratings={ratings} />
 
       {/* Row 3, col 4: Integrations placeholder */}
       <div className="card" style={{ gridColumn: 4, gridRow: 3 }}>
