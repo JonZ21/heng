@@ -3,6 +3,7 @@ import { useWebSocket } from '../hooks/useWebSocket.js';
 import { dayProgress, weekProgress } from '../utils/time.js';
 import ClockCard from './ClockCard.jsx';
 import ProgressPie from './ProgressPie.jsx';
+import LinearWidget from './LinearWidget.jsx';
 
 export default function BentoGrid({ linearData, setLinearData }) {
   const [now, setNow] = useState(new Date());
@@ -20,11 +21,7 @@ export default function BentoGrid({ linearData, setLinearData }) {
 
   return (
     <div className="bento">
-      {/* Row 1, col 1: Linear — spans 2 rows */}
-      <div className="card" style={{ gridColumn: 1, gridRow: '1 / 3' }}>
-        <div className="card-label">⬡ Linear</div>
-        <p style={{ color: 'var(--text-sub)', fontSize: '0.8rem' }}>Loading…</p>
-      </div>
+      <LinearWidget data={linearData} />
 
       {/* Row 1, col 2 */}
       <div style={{ gridColumn: 2, gridRow: 1 }}>
