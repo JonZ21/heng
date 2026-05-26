@@ -8,6 +8,7 @@ import LinearWidget from './LinearWidget.jsx';
 import GoalsWidget from './GoalsWidget.jsx';
 import RatingsChart from './RatingsChart.jsx';
 import StreakCard from './StreakCard.jsx';
+import IntegrationsCard from './IntegrationsCard.jsx';
 
 export default function BentoGrid({ linearData, setLinearData }) {
   const [now, setNow] = useState(new Date());
@@ -60,10 +61,7 @@ export default function BentoGrid({ linearData, setLinearData }) {
       <StreakCard />
       <RatingsChart ratings={ratings} />
 
-      {/* Row 3, col 4: Integrations placeholder */}
-      <div className="card" style={{ gridColumn: 4, gridRow: 3 }}>
-        <div className="card-label">⚡ Integrations</div>
-      </div>
+      <IntegrationsCard />
     </div>
   );
 }
