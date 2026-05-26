@@ -4,6 +4,7 @@ import { dayProgress, weekProgress } from '../utils/time.js';
 import ClockCard from './ClockCard.jsx';
 import ProgressPie from './ProgressPie.jsx';
 import LinearWidget from './LinearWidget.jsx';
+import GoalsWidget from './GoalsWidget.jsx';
 
 export default function BentoGrid({ linearData, setLinearData }) {
   const [now, setNow] = useState(new Date());
@@ -50,10 +51,7 @@ export default function BentoGrid({ linearData, setLinearData }) {
         <ClockCard />
       </div>
 
-      {/* Row 2, col 2-3: Goals placeholder */}
-      <div className="card" style={{ gridColumn: '2 / 4', gridRow: 2 }}>
-        <div className="card-label">◎ This Week's Goals</div>
-      </div>
+      <GoalsWidget />
 
       {/* Row 2, col 4: Streak placeholder */}
       <div className="card" style={{ gridColumn: 4, gridRow: 2 }}>
