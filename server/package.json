@@ -1,0 +1,17 @@
+{
+  "name": "heng-server",
+  "type": "module",
+  "version": "1.0.0",
+  "dependencies": {
+    "@linear/sdk": "^26.0.0",
+    "better-sqlite3": "^11.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "ws": "^8.17.0"
+  },
+  "devDependencies": {
+    "supertest": "^7.0.0",
+    "vitest": "^1.6.0"
+  }
+}
