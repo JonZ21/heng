@@ -11,24 +11,38 @@ export default function linearRouter(db) {
     if (!apiKey) {
       return res.status(500).json({ error: 'Linear API key not configured' });
     }
-
+  
     try {
       const client = new LinearClient({ apiKey });
-      const issue = await client.issue(req.params.issueId);
-      const team = await issue.team;
-      const statesConn = await team.states();
-      const doneState = statesConn.nodes.find(s => s.type === 'completed');
-
+      const { data } = await client.client.rawRequest(`
+        query IssueTeamStates($id: String!) {
+          issue(id: $id) {
+            team {
+              states { nodes { id type } }
+            }
+          }
+        }
+      `, { id: req.params.issueId });
+    
+      const doneState = data.issue.team.states.nodes.find(s => s.type === 'completed');
       if (!doneState) {
         return res.status(422).json({ error: 'No completed state found for team' });
       }
-
-      await client.issueUpdate(req.params.issueId, { stateId: doneState.id });
+    
+      await client.client.rawRequest(`
+        mutation IssueUpdate($id: String!, $stateId: String!) {
+          issueUpdate(id: $id, input: { stateId: $stateId }) {
+            success
+          }
+        }
+      `, { id: req.params.issueId, stateId: doneState.id });
+    
       res.json({ ok: true });
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
-  });
+    
+    });
 
   return router;
 }

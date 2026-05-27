@@ -10,6 +10,7 @@ function statusDotColor(issue) {
 function IssueRow({ issue, onComplete }) {
   const [error, setError] = useState(false);
   const [done, setDone] = useState(false);
+  const [hovered, setHovered] = useState(false);
 
   async function handleComplete() {
     setDone(true);
@@ -26,6 +27,8 @@ function IssueRow({ issue, onComplete }) {
 
   if (done) return null;
 
+  const borderColor = error ? '#e05050' : hovered ? '#5b9bc8' : '#d0d0d8';
+
   return (
     <div style={{
       display: 'flex', alignItems: 'center', gap: '0.4rem',
@@ -34,12 +37,14 @@ function IssueRow({ issue, onComplete }) {
     }}>
       <button
         onClick={handleComplete}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
         title="Mark done"
         style={{
           width: '16px', height: '16px', borderRadius: '50%',
-          border: `1.5px solid ${error ? '#e05050' : '#d0d0d8'}`,
+          border: `1.5px solid ${borderColor}`,
           background: 'transparent', cursor: 'pointer', flexShrink: 0,
-          padding: 0,
+          padding: 0, transition: 'border-color 0.12s',
         }}
       />
       <div style={{ flex: 1, minWidth: 0 }}>

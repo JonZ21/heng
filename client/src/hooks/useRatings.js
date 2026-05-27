@@ -21,5 +21,10 @@ export function useRatings(limit = 6) {
     setRatings(prev => [row, ...prev].slice(0, limit));
   }
 
-  return { ratings, addRating };
+  async function deleteRating(id) {
+    setRatings(prev => prev.filter(r => r.id !== id));
+    await fetch(`/api/ratings/${id}`, { method: 'DELETE' });
+  }
+
+  return { ratings, addRating, deleteRating };
 }

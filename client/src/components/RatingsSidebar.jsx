@@ -9,7 +9,7 @@ function formatWeekLabel(weekStart) {
 }
 
 export default function RatingsSidebar() {
-  const { ratings, addRating } = useRatings(3);
+  const { ratings, addRating, deleteRating } = useRatings(3);
   const [showForm, setShowForm] = useState(false);
   const [value, setValue] = useState('');
   const [notes, setNotes] = useState('');
@@ -17,7 +17,7 @@ export default function RatingsSidebar() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    const rating = parseInt(value, 10);
+    const rating = parseFloat(value);
     if (!rating || rating < 1 || rating > 10) return;
     setSubmitting(true);
     await addRating(getWeekStart(), rating, notes);
@@ -43,16 +43,27 @@ export default function RatingsSidebar() {
               borderRadius: '99px',
             }} />
           </div>
-          <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--blue)', width: '1rem', textAlign: 'right', flexShrink: 0 }}>
+          <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--blue)', width: '1.5rem', textAlign: 'right', flexShrink: 0 }}>
             {r.rating}
           </div>
+          <button
+            onClick={() => deleteRating(r.id)}
+            title="Delete"
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              color: '#ddd', fontSize: '0.6rem', padding: '0 0.1rem',
+              flexShrink: 0, lineHeight: 1,
+            }}
+          >
+            ✕
+          </button>
         </div>
       ))}
 
       {showForm ? (
         <form onSubmit={handleSubmit} style={{ marginTop: '0.55rem' }}>
           <input
-            type="number" min="1" max="10"
+            type="number" min="1" max="10" step="0.5"
             value={value}
             onChange={e => setValue(e.target.value)}
             placeholder="1–10"

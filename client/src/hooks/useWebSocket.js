@@ -6,12 +6,14 @@ const MAX_BACKOFF_MS = 30_000;
 export function useWebSocket(onMessage) {
   const socketRef = useRef(null);
   const attemptsRef = useRef(0);
+  const intentionalRef = useRef(false);
   const onMessageRef = useRef(onMessage);
   onMessageRef.current = onMessage;
 
   const connect = useCallback(() => {
     const ws = new WebSocket(WS_URL);
     socketRef.current = ws;
+    intentionalRef.current = false;
 
     ws.onopen = () => {
       attemptsRef.current = 0;
@@ -29,17 +31,20 @@ export function useWebSocket(onMessage) {
     };
 
     ws.onclose = () => {
+      if (intentionalRef.current) return;
       const delay = Math.min(1000 * 2 ** attemptsRef.current, MAX_BACKOFF_MS);
       attemptsRef.current++;
       setTimeout(connect, delay);
     };
 
-    ws.onerror = () => ws.close();
+    // onerror always fires before onclose — no need to close manually
+    ws.onerror = () => {};
   }, []);
 
   useEffect(() => {
     connect();
     return () => {
+      intentionalRef.current = true;
       socketRef.current?.close();
     };
   }, [connect]);

@@ -3,23 +3,17 @@ import request from 'supertest';
 import { createDb, closeDb } from '../db.js';
 import { createApp } from '../app.js';
 
-const mockIssueUpdate = vi.fn().mockResolvedValue({ success: true });
-const mockStates = vi.fn().mockResolvedValue({
-  nodes: [
-    { id: 'state-1', name: 'In Progress', type: 'started' },
-    { id: 'state-2', name: 'Done', type: 'completed' },
-  ],
-});
+const mockRawRequest = vi.fn();
 
 vi.mock('@linear/sdk', () => ({
   LinearClient: vi.fn().mockImplementation(() => ({
-    issue: vi.fn().mockResolvedValue({
-      team: Promise.resolve({ states: mockStates }),
-    }),
-    issueUpdate: mockIssueUpdate,
-    client: { rawRequest: vi.fn() },
+    client: { rawRequest: mockRawRequest },
   })),
 }));
+
+function makeStateNodes(nodes) {
+  return { data: { issue: { team: { states: { nodes } } } } };
+}
 
 describe('POST /api/linear/complete/:issueId', () => {
   let db, app;
@@ -29,13 +23,6 @@ describe('POST /api/linear/complete/:issueId', () => {
     db = createDb(':memory:');
     app = createApp(db);
     vi.clearAllMocks();
-    mockStates.mockResolvedValue({
-      nodes: [
-        { id: 'state-1', name: 'In Progress', type: 'started' },
-        { id: 'state-2', name: 'Done', type: 'completed' },
-      ],
-    });
-    mockIssueUpdate.mockResolvedValue({ success: true });
   });
 
   afterEach(() => {
@@ -43,11 +30,20 @@ describe('POST /api/linear/complete/:issueId', () => {
     closeDb(db);
   });
 
-  it('returns ok:true and calls issueUpdate with the done state id', async () => {
+  it('returns ok:true and calls issueUpdate mutation with done state id', async () => {
+    mockRawRequest
+      .mockResolvedValueOnce(makeStateNodes([
+        { id: 'state-1', type: 'started' },
+        { id: 'state-2', type: 'completed' },
+      ]))
+      .mockResolvedValueOnce({ data: { issueUpdate: { success: true } } });
+
     const res = await request(app).post('/api/linear/complete/issue-abc');
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ ok: true });
-    expect(mockIssueUpdate).toHaveBeenCalledWith('issue-abc', { stateId: 'state-2' });
+
+    const mutationCall = mockRawRequest.mock.calls[1];
+    expect(mutationCall[1]).toEqual({ id: 'issue-abc', stateId: 'state-2' });
   });
 
   it('returns 500 when no API key is configured', async () => {
@@ -58,9 +54,10 @@ describe('POST /api/linear/complete/:issueId', () => {
   });
 
   it('returns 422 when no completed state exists for the team', async () => {
-    mockStates.mockResolvedValue({
-      nodes: [{ id: 'state-1', name: 'In Progress', type: 'started' }],
-    });
+    mockRawRequest.mockResolvedValueOnce(makeStateNodes([
+      { id: 'state-1', type: 'started' },
+    ]));
+
     const res = await request(app).post('/api/linear/complete/issue-abc');
     expect(res.status).toBe(422);
     expect(res.body.error).toMatch(/completed state/i);
