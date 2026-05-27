@@ -6,41 +6,59 @@ export default {
 
   async fetch(config) {
     const client = new LinearClient({ apiKey: config.linear_api_key });
-    const viewer = await client.viewer;
-    const result = await viewer.assignedIssues({
-      filter: {
-        state: { type: { in: ['started', 'unstarted', 'backlog'] } },
-        completedAt: { null: true },
-      },
-    });
+    const { data } = await client.client.rawRequest(`
+      query {
+        issues(filter: { state: { type: { nin: ["cancelled"] } } }, first: 100) {
+          nodes {
+            id
+            title
+            identifier
+            dueDate
+            state { name type }
+            project { id name color }
+          }
+        }
+      }
+    `);
 
-    const today = new Date().toISOString().split('T')[0];
-    const inProgress = [];
-    const upcoming = [];
-    const overdue = [];
+    const projectMap = new Map();
 
-    for (const issue of result.nodes) {
-      const isOverdue = issue.dueDate && issue.dueDate < today;
-      if (issue.state.type === 'started') {
-        inProgress.push(formatIssue(issue));
-      } else if (isOverdue) {
-        overdue.push(formatIssue(issue));
+    for (const issue of data.issues.nodes) {
+      const proj = issue.project;
+      const key = proj ? proj.id : '__none__';
+
+      if (!projectMap.has(key)) {
+        projectMap.set(key, {
+          id: key,
+          name: proj ? proj.name : 'General',
+          color: proj ? proj.color : '#8a8a9a',
+          totalIssues: 0,
+          completedIssues: 0,
+          openIssues: [],
+        });
+      }
+
+      const p = projectMap.get(key);
+      p.totalIssues++;
+
+      if (issue.state.type === 'completed') {
+        p.completedIssues++;
       } else {
-        upcoming.push(formatIssue(issue));
+        p.openIssues.push({
+          id: issue.id,
+          title: issue.title,
+          identifier: issue.identifier,
+          dueDate: issue.dueDate ?? null,
+          stateName: issue.state.name,
+          stateType: issue.state.type,
+        });
       }
     }
 
-    return { inProgress, upcoming, overdue, lastUpdated: new Date().toISOString() };
+    const projects = [...projectMap.values()]
+      .sort((a, b) => b.openIssues.length - a.openIssues.length)
+      .slice(0, 4);
+
+    return { projects, lastUpdated: new Date().toISOString() };
   },
 };
-
-function formatIssue(issue) {
-  return {
-    id: issue.id,
-    title: issue.title,
-    identifier: issue.identifier,
-    dueDate: issue.dueDate ?? null,
-    stateName: issue.state.name,
-    stateType: issue.state.type,
-  };
-}

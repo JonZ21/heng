@@ -5,10 +5,18 @@ export default function goalsRouter(db) {
 
   router.get('/', (req, res) => {
     const { week } = req.query;
-    const rows = week
-      ? db.prepare('SELECT * FROM weekly_goals WHERE week_start = ? ORDER BY id ASC').all(week)
-      : db.prepare('SELECT * FROM weekly_goals ORDER BY id ASC').all();
-    res.json(rows);
+    if (!week) {
+      return res.json(db.prepare('SELECT * FROM weekly_goals ORDER BY id ASC').all());
+    }
+    const carryover = db.prepare(
+      `SELECT * FROM weekly_goals
+       WHERE week_start < ? AND week_start >= date(?, '-28 days') AND completed = 0
+       ORDER BY id ASC`
+    ).all(week, week);
+    const current = db.prepare(
+      'SELECT * FROM weekly_goals WHERE week_start = ? ORDER BY id ASC'
+    ).all(week);
+    res.json([...carryover, ...current]);
   });
 
   router.post('/', (req, res) => {

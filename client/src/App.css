@@ -52,8 +52,7 @@ body {
 /* Bento grid */
 .bento {
   display: grid;
-  grid-template-columns: 2.2fr 1fr 1fr 1.2fr;
-  grid-template-rows: auto auto auto;
+  grid-template-columns: 4fr 1fr;
   gap: 10px;
   padding: 12px;
   height: 100vh;

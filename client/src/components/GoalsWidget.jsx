@@ -1,13 +1,42 @@
 import { useState } from 'react';
 import { useGoals } from '../hooks/useGoals.js';
 
+const CIRCUMFERENCE = 2 * Math.PI * 18;
+
+function Donut({ completed, total }) {
+  const frac = total > 0 ? completed / total : 0;
+  const dashArray = `${frac * CIRCUMFERENCE} ${CIRCUMFERENCE}`;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '0.5rem' }}>
+      <svg width="54" height="54" viewBox="0 0 48 48">
+        <circle cx="24" cy="24" r="18" fill="none" stroke="#d4eaf7" strokeWidth="7" />
+        <circle
+          cx="24" cy="24" r="18" fill="none"
+          stroke="#5b9bc8" strokeWidth="7"
+          strokeDasharray={dashArray}
+          strokeDashoffset="0"
+          strokeLinecap="round"
+          transform="rotate(-90 24 24)"
+        />
+        <text
+          x="24" y="28" textAnchor="middle"
+          fontSize="9" fontWeight="700" fill="#2d6a92"
+          fontFamily="-apple-system,sans-serif"
+        >
+          {completed}/{total}
+        </text>
+      </svg>
+    </div>
+  );
+}
+
 export default function GoalsWidget() {
   const { goals, addGoal, toggleGoal } = useGoals();
   const [inputValue, setInputValue] = useState('');
   const [showInput, setShowInput] = useState(false);
 
   const completed = goals.filter(g => g.completed).length;
-  const progress = goals.length > 0 ? completed / goals.length : 0;
 
   async function handleAdd(e) {
     e.preventDefault();
@@ -19,82 +48,59 @@ export default function GoalsWidget() {
   }
 
   return (
-    <div className="card" style={{ gridColumn: '2 / 4', gridRow: 2, position: 'relative' }}>
-      <div style={{
-        position: 'absolute', width: '120px', height: '120px', borderRadius: '50%',
-        background: 'var(--lav-light)', bottom: '-40px', right: 0,
-        filter: 'blur(35px)', opacity: 0.7, pointerEvents: 'none',
-      }} />
+    <div className="card" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0 }}>
+      <div className="card-label">◎ Goals</div>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div className="card-label">◎ This Week's Goals</div>
-        <button
-          onClick={() => setShowInput(v => !v)}
-          style={{
-            background: 'none', border: 'none', cursor: 'pointer',
-            fontSize: '0.75rem', color: 'var(--blue)', fontWeight: 600, padding: '0 0.2rem',
-          }}
-        >
-          {showInput ? '✕' : '+ add'}
-        </button>
+      <Donut completed={completed} total={goals.length} />
+
+      <div style={{ flex: 1, overflow: 'hidden' }}>
+        {goals.map(goal => (
+          <div
+            key={goal.id}
+            onClick={() => toggleGoal(goal.id, !goal.completed)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '0.35rem',
+              padding: '0.28rem 0', borderBottom: '1px solid #f5f5f7',
+              cursor: 'pointer', overflow: 'hidden',
+            }}
+          >
+            <div style={{
+              width: '13px', height: '13px', borderRadius: '50%', flexShrink: 0,
+              background: goal.completed ? '#5b9bc8' : 'transparent',
+              border: goal.completed ? 'none' : '1.5px solid #ddd',
+            }} />
+            <span style={{
+              fontSize: '0.65rem', color: 'var(--text)',
+              textDecoration: goal.completed ? 'line-through' : 'none',
+              opacity: goal.completed ? 0.4 : 1,
+              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+            }}>
+              {goal.title}
+            </span>
+          </div>
+        ))}
       </div>
 
-      {showInput && (
-        <form onSubmit={handleAdd} style={{ marginBottom: '0.6rem' }}>
+      {showInput ? (
+        <form onSubmit={handleAdd} style={{ marginTop: '0.35rem' }}>
           <input
             autoFocus
             value={inputValue}
             onChange={e => setInputValue(e.target.value)}
             placeholder="New goal…"
             style={{
-              width: '100%', padding: '0.4rem 0.6rem', borderRadius: '8px',
-              border: '1.5px solid var(--blue-light)', fontSize: '0.77rem',
+              width: '100%', padding: '0.3rem 0.5rem', borderRadius: '6px',
+              border: '1.5px solid var(--blue-light)', fontSize: '0.65rem',
               fontFamily: 'var(--font)', outline: 'none', color: 'var(--text)',
             }}
           />
         </form>
-      )}
-
-      {goals.length === 0 && !showInput && (
-        <p style={{ fontSize: '0.75rem', color: 'var(--text-sub)' }}>No goals yet — tap + add</p>
-      )}
-
-      {goals.map(goal => (
+      ) : (
         <div
-          key={goal.id}
-          onClick={() => toggleGoal(goal.id, !goal.completed)}
-          style={{
-            display: 'flex', alignItems: 'center', gap: '0.6rem',
-            padding: '0.4rem 0', borderBottom: '1px solid var(--border)',
-            cursor: 'pointer',
-          }}
+          onClick={() => setShowInput(true)}
+          style={{ fontSize: '0.62rem', color: '#5b9bc8', fontWeight: 600, marginTop: '0.35rem', cursor: 'pointer' }}
         >
-          <div style={{
-            width: '17px', height: '17px', borderRadius: '50%', flexShrink: 0,
-            background: goal.completed ? 'var(--blue)' : 'transparent',
-            border: goal.completed ? 'none' : '2px solid #ddd',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            {goal.completed && <span style={{ color: 'white', fontSize: '0.55rem', fontWeight: 800 }}>✓</span>}
-          </div>
-          <span style={{
-            fontSize: '0.77rem', color: 'var(--text)',
-            textDecoration: goal.completed ? 'line-through' : 'none',
-            opacity: goal.completed ? 0.4 : 1,
-            flex: 1,
-          }}>
-            {goal.title}
-          </span>
-        </div>
-      ))}
-
-      {goals.length > 0 && (
-        <div style={{ marginTop: '0.7rem', height: '4px', background: 'var(--blue-light)', borderRadius: '99px', overflow: 'hidden' }}>
-          <div style={{
-            height: '100%', width: `${progress * 100}%`,
-            background: 'linear-gradient(90deg, var(--blue), var(--blue-mid))',
-            borderRadius: '99px', transition: 'width 0.3s ease',
-          }} />
+          + add goal
         </div>
       )}
     </div>

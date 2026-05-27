@@ -14,12 +14,30 @@ describe('GET /api/goals', () => {
     expect(res.body).toEqual([]);
   });
 
-  it('returns goals for the requested week only', async () => {
-    db.prepare('INSERT INTO weekly_goals (week_start, title) VALUES (?, ?)').run('2026-05-25', 'Goal A');
-    db.prepare('INSERT INTO weekly_goals (week_start, title) VALUES (?, ?)').run('2026-05-18', 'Goal B');
+  it('does not carry over completed goals from prior weeks', async () => {
+    db.prepare('INSERT INTO weekly_goals (week_start, title, completed) VALUES (?, ?, ?)').run('2026-05-25', 'Goal A', 0);
+    db.prepare('INSERT INTO weekly_goals (week_start, title, completed) VALUES (?, ?, ?)').run('2026-05-18', 'Goal B', 1);
     const res = await request(app).get('/api/goals?week=2026-05-25');
     expect(res.body).toHaveLength(1);
     expect(res.body[0].title).toBe('Goal A');
+  });
+
+  it('returns incomplete goals from prior weeks (carryover)', async () => {
+    db.prepare('INSERT INTO weekly_goals (week_start, title, completed) VALUES (?, ?, ?)').run('2026-05-18', 'Old incomplete', 0);
+    db.prepare('INSERT INTO weekly_goals (week_start, title, completed) VALUES (?, ?, ?)').run('2026-05-18', 'Old complete', 1);
+    db.prepare('INSERT INTO weekly_goals (week_start, title) VALUES (?, ?)').run('2026-05-25', 'Current goal');
+    const res = await request(app).get('/api/goals?week=2026-05-25');
+    expect(res.body).toHaveLength(2);
+    expect(res.body[0].title).toBe('Old incomplete');
+    expect(res.body[1].title).toBe('Current goal');
+  });
+
+  it('excludes incomplete goals older than 4 weeks', async () => {
+    db.prepare('INSERT INTO weekly_goals (week_start, title, completed) VALUES (?, ?, ?)').run('2026-04-20', 'Too old', 0);
+    db.prepare('INSERT INTO weekly_goals (week_start, title) VALUES (?, ?)').run('2026-05-25', 'Current goal');
+    const res = await request(app).get('/api/goals?week=2026-05-25');
+    expect(res.body).toHaveLength(1);
+    expect(res.body[0].title).toBe('Current goal');
   });
 });
 
